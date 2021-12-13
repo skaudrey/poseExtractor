@@ -10,6 +10,8 @@
 import cv2
 import os
 import numpy as np
+import win32api, win32con
+import math
 
 def video2Img(video_path, save_path,time_interval=1):
     '''
@@ -63,6 +65,55 @@ def img2Video(img_path,save_path,fps=24,img_size=(640,800)):
     video.release()
     cv2.destroyAllWindows()
 
-def resize(targetSize):
-    pass
+def getScreenResolution():
 
+    res_x = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)  # screen resolution in x axis
+
+    res_y = win32api.GetSystemMetrics(win32con.SM_CYSCREEN) # screen resolution in y axis
+
+    return [res_x,res_y]
+
+def resize(img,targetSize,joints_list):
+    raw_size = img.shape[:2]
+
+    scale_x = raw_size[0]/targetSize[0]
+    scale_y = raw_size[1]/targetSize[1]
+
+    resized_joints = []
+    i = 0
+
+    for idx,joint in enumerate(joints_list):
+        r_x, r_y = math.ceil(joint[0]*scale_x),math.ceil(joint[1]*scale_y)
+        resized_joints[idx] = np.array([r_x,r_y])
+
+    img_resize = cv2.resize(img, targetSize)
+
+    return img_resize,resized_joints
+
+
+def valid_resolution(width, height, output_stride=16):
+    '''
+    Check whether the required resolution is satisfied.
+    '''
+    # Why +1?
+    # target_width = (int(width) // output_stride) * output_stride + 1
+    # target_height = (int(height) // output_stride) * output_stride + 1
+
+    target_width = (int(width) // output_stride) * output_stride
+    target_height = (int(height) // output_stride) * output_stride
+
+    return target_width, target_height
+
+def process_input(source_img, scale_factor=1.0, output_stride=16):
+    '''
+    The source image is read by cv2.
+    '''
+    target_width, target_height = valid_resolution(
+        source_img.shape[1] * scale_factor, source_img.shape[0] * scale_factor, output_stride=output_stride)
+    scale = np.array([source_img.shape[0] / target_height, source_img.shape[1] / target_width])
+
+    input_img = cv2.resize(source_img, (target_width, target_height), interpolation=cv2.INTER_LINEAR)
+    input_img = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB).astype(np.float32)
+    input_img = input_img * (2.0 / 255.0) - 1.0
+    input_img = input_img.transpose((2, 0, 1)).reshape( 1, 3, target_height, target_width)
+    return input_img, scale

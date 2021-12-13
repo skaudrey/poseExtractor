@@ -1,0 +1,32 @@
+input_path: ./input/ntu60
+output_path: ./output/ntu60
+
+max_subject: 5 # detect 5 subject firstly
+max_subject_output: 2 # output 2 subjects finally
+
+# extraction
+model_name: openpose
+extractor: extractor.OpenPoseExtractor
+openpose_args:
+  face_resolution: 256x256
+  hand_resolution: 256x256
+  joint_confidence: 0.3
+  net_resolution: -1x256
+  openpose_model: COCO
+  openpose_root_dir: D:/work/openpose/build
+
+# uncomment the specific extraction model by your choice.
+##----------------- cubemos start-----------------
+# extractor: extractor.CubeMos
+# model_name: cubemos
+##----------------- cubemos end-----------------
+
+# extractor: extractor.PoseNet
+##----------------- posenet start-----------------
+# extractor: extractor.PoseNet
+# model_name: posenet
+#posenet_args:
+#  scale_factor: 1.0
+#  posenet_model: 101 # candidates: [50,75,100,101]
+##----------------- posenet end-----------------
+

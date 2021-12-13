@@ -18,29 +18,35 @@ class OpenPoseExtractor(BaseExtractor):
     '''
     Each time
     '''
-    def __init__(self,aConfig):
+    def __init__(self,
+                 image_size = (340,256,3),
+                 face_resolution='256x256',
+                 hand_resolution='256x256',
+                 joint_confidence=0.3,
+                 net_resolution='-1x256',
+                 openpose_model='BODY_25',
+                 openpose_root_dir='D:/work/openpose/build'):
         '''
         Initialize the openpose Extractor.
         :param openpose_rootdir: Where the built openpose exits
         :param model_pose: the pose model. Openpose supports [BODY_25, COCO, MPI], but BODY_25 with highest performance.
         '''
-        print("Initialize openpose extractor")
-        self._aConfig = aConfig
-        self._dir_path = aConfig.OPENPOSE_ROOT_DIR
-        self._model_pose = aConfig.OPENPOSE_MODEL
 
-        # import openpose and then set the parameters
+        print("Initialize openpose extractor")
+        self.joint_confidence = joint_confidence
+        self.image_size = image_size
+
         try:
             # Windows Import
             if platform == "win32":
                 # Change these variables to point to the correct folder (Release/x64 etc.)
-                print(self._dir_path + '/python/openpose/Release')
-                sys.path.append(self._dir_path + '/python/openpose/Release')
-                os.environ['PATH'] = os.environ['PATH'] + ';' + self._dir_path + '/x64/Release;' + self._dir_path + '/bin;'
+                print(openpose_root_dir + '/python/openpose/Release')
+                sys.path.append(openpose_root_dir + '/python/openpose/Release')
+                os.environ['PATH'] = os.environ['PATH'] + ';' + openpose_root_dir + '/x64/Release;' + openpose_root_dir + '/bin;'
                 import pyopenpose as op
             else:
                 # Change these variables to point to the correct folder (Release/x64 etc.)
-                sys.path.append('../work/openpose-master/python')
+                sys.path.append('%s/python/openpose'%openpose_root_dir)
                 # If you run `make install` (default path is `/usr/local/python` for Ubuntu),
                 # you can also access the OpenPose/python module from there. This will install OpenPose and the
                 # python library at your desired installation path. Ensure that this is in your python path in order
@@ -55,13 +61,13 @@ class OpenPoseExtractor(BaseExtractor):
 
         # set other parameters
         params = dict()
-        params["model_folder"] = self._dir_path + "/../models"
-        # print(self._dir_path + "/../models")
-        params['model_pose'] = self._model_pose
+        params["model_folder"] = openpose_root_dir + "/../models"
+        params['model_pose'] = openpose_model
 
-        params['net_resolution'] = aConfig.NET_RESOLUTION
-        params['face_net_resolution'] = aConfig.FACE_RESOLUTION
-        params['hand_net_resolution'] = aConfig.FACE_RESOLUTION
+        params['net_resolution'] = net_resolution
+        params['face_net_resolution'] = face_resolution
+        params['hand_net_resolution'] = hand_resolution
+        params['hand_net_resolution'] = face_resolution
         self._params = params
 
         # Starting OpenPose and instancing the used functions and data structs from openpose
@@ -83,8 +89,13 @@ class OpenPoseExtractor(BaseExtractor):
         # self._opWrapper.emplaceAndPop(self._opFunction(self._datum))
         self._opWrapper.emplaceAndPop(self._opFunction(self._datum))
 
-        skeletons = self._datum.poseKeypoints
-        return skeletons
+        poses = self._datum.poseKeypoints # in shape (nSub, 25, 3)
+        self.validatePoses(self, poses)
+
+        return poses
+
+
+
 
     def postProcess_skeleton(self,skeleton_2d):
         '''
@@ -95,7 +106,7 @@ class OpenPoseExtractor(BaseExtractor):
         n_subject = skeleton_2d.shape[0]
         for ind in range(n_subject):
             joints_2d = skeleton_2d[ind,:,:]
-            if joints_2d[:,2]>self._aConfig.JOINT_CONFIDENCE:
+            if joints_2d[:,2]>self.joint_confidence:
                 continue
             else:
                 pass
@@ -121,5 +132,5 @@ class OpenPoseExtractor(BaseExtractor):
 if __name__=="__main__":
     dir_base = os.getcwd()
     print(dir_base)
-    extractor = OpenPoseExtractor(dir_base+"/../bag",dir_base+"/../output/")
+    extractor = OpenPoseExtractor(dir_base+"/../vsi",dir_base+"/../output/")
 

@@ -12,8 +12,8 @@ import pyrealsense2 as rs
 import math
 
 class BaseExtractor(object):
-    def __init__(self,aConfig):
-        self._aConfig = aConfig
+    def __init__(self):
+        pass
 
     def extract2DPose(self,img_data):
         pass
@@ -24,18 +24,18 @@ class BaseExtractor(object):
         NOTE: the keypoints struct are different from different extractor.
         :param skeletons_2d: The extracted 2d pose in shape (#subject,
         #keypoints, 3), where 3 means x,y dimension and confidence score.
-        :param depth_map: The depth map from RGBD camera (extracted from saved bag file)
+        :param depth_map: The depth map from RGBD camera (extracted from saved vsi file)
         :param depth_intrinsic: The intrinsic parameters of camera.
         :param joint_confidence: The threshold of keypoint confidence score.
         :return: The extracted 3D pose and confidence score
         '''
         # thickness = 1
         # text_color = (255, 255, 255)
-        rows, cols, channel = self._aConfig.IMAGE_SIZE
+        rows, cols, channel = self.image_size
         distance_kernel_size = 5
         # calculate 3D keypoints and display them
         subject_n, joint_n, dim = skeletons_2d.shape
-        pts_3d = np.ndarray((subject_n, joint_n, 4))
+        pts_3d = np.ndarray((subject_n, joint_n, 4)) # shape 4 is x,y,z and score
         for skeleton_index in range(subject_n):
             skeleton_2D = skeletons_2d[skeleton_index]
             joints_2D = skeleton_2D
@@ -45,7 +45,7 @@ class BaseExtractor(object):
                 # check if the joint was detected and has valid coordinate
                 joint_x, joint_y, j_confidence = joints_2D[joint_index, ]
 
-                if j_confidence > self._aConfig.JOINT_CONFIDENCE:
+                if j_confidence > self.joint_confidence:
                     distance_in_kernel = []  # the next get torso box?
                     low_bound_x = max(
                         0,
@@ -80,5 +80,25 @@ class BaseExtractor(object):
                         point_3d = np.round([float(i) for i in point_3d], 3)
                         pts_3d[skeleton_index, joint_index, [0, 1, 2]] = point_3d
                         pts_3d[skeleton_index, joint_index, -1] = j_confidence
+                else:
+                    # set the default value when the joint is not reliable
+                    point_3d = np.array([1e-5]*3)
+                    pts_3d[skeleton_index, joint_index, [0, 1, 2]] = point_3d
+                    pts_3d[skeleton_index, joint_index, -1] = -1.
 
         return pts_3d
+
+
+
+    def validatePoses(self,multi_pose):
+        # normalization
+        # multi_pose[:, :, 0] = multi_pose[:, :, 0] / W
+        # multi_pose[:, :, 1] = multi_pose[:, :, 1] / H
+        # multi_pose[:, :, 0:2] = multi_pose[:, :, 0:2] - 0.5
+        multi_pose[:, :, 0][multi_pose[:, :, 2] == 0] = 0
+        multi_pose[:, :, 1][multi_pose[:, :, 2] == 0] = 0  # if score==0, set joint from zero point
+        return multi_pose
+
+
+    def clean(self):
+        pass

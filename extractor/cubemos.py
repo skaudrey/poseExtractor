@@ -20,10 +20,11 @@ class CubeMos(BaseExtractor):
     Use Cubemos Model and return 18 joints.
     https://cubemos.stoplight.io/
     '''
-    def __init__(self,aConfig):
+    def __init__(self,joint_confidence=0.3,image_size = (340,256,3)):
         print("Initialize cubemos extractor")
         # Initialize the cubemos api with a valid license key in default_license_dir()
-        self._aConfig = aConfig
+        self.joint_confidence = joint_confidence
+        self.image_size = image_size
         self.extractor = skeletontracker(cloud_tracking_api_key="")
 
 

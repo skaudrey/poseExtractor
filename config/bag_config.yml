@@ -1,0 +1,43 @@
+input_path: ./input/vsi #  F:/vsi/xsub
+output_path: ./output/tmp/vsi
+
+max_subject: 5 # detect 5 subject firstly
+max_subject_output: 2 # output 2 subjects finally
+
+# extraction
+model_name: openpose
+extractor: extractor.OpenPoseExtractor
+openpose_args:
+  face_resolution: 256x256
+  hand_resolution: 256x256
+  joint_confidence: 0.3
+  net_resolution: -1x256
+  openpose_model: COCO
+  openpose_root_dir: D:/work/openpose/build
+
+# uncomment the specific extraction model by your choice.
+##----------------- cubemos start-----------------
+#model_name: cubemos
+#extractor: extractor.CubeMos
+#cubemos_args:
+#  joint_confidence: 0.3
+
+##----------------- cubemos end-----------------
+
+# extractor: extractor.PoseNet
+##----------------- posenet start-----------------
+#model_name: posenet
+#extractor: extractor.PoseNet
+#posenet_args:
+#  scale_factor: 1.0
+#  posenet_model: 101 # candidates: [50,75,100,101]
+#  joint_confidence: 0.3
+##----------------- posenet end-----------------
+
+# rescale images
+image_size:  [340,256,3] # [680,512,3]
+fps: 30
+delay_cv: -1
+save_video: True # set as true when one also want extract videos from rosbag.
+#saveImgFlag: True
+

@@ -4,4 +4,4 @@
 # __all__ = ['openpose', 'cubemos']
 from .openpose import OpenPoseExtractor
 from .cubemos import CubeMos
-from .bagIterator import BagIterator
+from .posenet import PoseNet
